@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { World } from 'cannon-es'
 
 import './styles/index.css'
-import buildWorld, { dropper } from './build_world.js'
+import buildWorld from './build_world.js'
 import { updatePlayer } from './props/player'
 
 //~ Scene
@@ -44,16 +44,14 @@ document.body.appendChild(stats.dom)
 buildWorld()
 
 //~ Run
-function animate(time) {
+function animate() {
     stats.begin()
 
     world.step(1 / 60)
     updatePlayer()
-    //dropper()
     for (const { mesh, body } of props) { if (!body) continue; mesh.position.copy(body.position); mesh.quaternion.copy(body.quaternion) }
 
     renderer.render(scene, camera)
 
     stats.end();
-
 }

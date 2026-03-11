@@ -21,19 +21,19 @@ function createPlaneGeo() {
 }
 
 //~ Physics
-function staticPhysicsObj(mesh) {
+function staticPhysicsObj({mesh, collider, friction, restitution, linearDamping}) {
     const shape = mesh.geometry.type === 'PlaneGeometry'
         ? new Plane()
         : new Box(new Vec3(mesh.scale.x / 2, mesh.scale.y / 2, mesh.scale.z / 2))
-    const body = new Body({ mass: 0, shape })
+    const body = new Body({ shape: shape, collisionResponse: collider, friction: friction, restitution: restitution })
     body.position.copy(mesh.position)
     body.quaternion.setFromEuler(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z, 'XYZ')
     return body
 }
 
-function dynamicPhysicsObj(mesh, mass = 1) {
+function dynamicPhysicsObj({mesh, mass = 1, collider, friction, restitution, linearDamping}) {
     const shape = new Box(new Vec3(mesh.scale.x / 2, mesh.scale.y / 2, mesh.scale.z / 2))
-    const body = new Body({ mass, shape })
+    const body = new Body({ mass, shape: shape, collisionResponse: collider, friction: friction, restitution: restitution, linearDamping: linearDamping })
     body.position.copy(mesh.position)
     body.quaternion.setFromEuler(...mesh.rotation.toArray())
     return body
@@ -46,16 +46,18 @@ function loadTexture(path) {
 }
 
 function despawnObj(id) {
-    const index = props.findIndex(p => p.id === id);
-    if (index === -1) return;
+    const index = props.findIndex(p => p.id === id)
+    if (index === -1) {
+        console.warn(`despawnObj: no prop found with id "${id}"`)
+        return
+    }
 
-    const obj = props[index];
+    const { body, mesh } = props[index]
 
-    if (obj.body) obj.body.world?.removeBody(obj.body);
+    body?.world?.removeBody(body)
+    mesh?.parent?.remove(mesh)
 
-    if (obj.mesh && obj.mesh.parent) obj.mesh.parent.remove(obj.mesh);
-
-    props.splice(index, 1);
+    props.splice(index, 1)
 }
 
 export { createBoxGeo, createPlaneGeo, staticPhysicsObj, dynamicPhysicsObj, loadTexture, despawnObj }
