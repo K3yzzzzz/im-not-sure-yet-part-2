@@ -46,4 +46,20 @@ const orange = {
     o13: '/textures/orange/texture_13.png'
 }
 
-export { dark, red, orange }
+const purple = {
+    o1: '/textures/purple/texture_01.png',
+    o2: '/textures/purple/texture_02.png',
+    o3: '/textures/purple/texture_03.png',
+    o4: '/textures/purple/texture_04.png',
+    o5: '/textures/purple/texture_05.png',
+    o6: '/textures/purple/texture_06.png',
+    o7: '/textures/purple/texture_07.png',
+    o8: '/textures/purple/texture_08.png',
+    o9: '/textures/purple/texture_09.png',
+    o10: '/textures/purple/texture_10.png',
+    o11: '/textures/purple/texture_11.png',
+    o12: '/textures/purple/texture_12.png',
+    o13: '/textures/purple/texture_13.png'
+}
+
+export { dark, red, orange, purple }

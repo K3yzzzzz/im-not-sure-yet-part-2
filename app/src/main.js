@@ -1,9 +1,8 @@
-//main.js
 import * as THREE from 'three'
 import { World } from 'cannon-es'
 
 import './styles/index.css'
-import buildWorld from './build_world.js'
+import buildWorld from './buildWorld.js'
 import { updatePlayer } from './props/player'
 
 //~ Scene

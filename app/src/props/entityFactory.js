@@ -1,10 +1,7 @@
-//props.js
-import * as THREE from 'three'
-import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './prop_helper'
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js'
+import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './entityUtils'
 import { scene, world, props } from '../main'
 
-function createProp({ type = {}, values = {}, physics = {}, sensor = {}, texPath } = {}) {
+function createEntity({ type = {}, values = {}, physics = {}, sensor = {}, texPath } = {}) {
     //~ Set properties
     const {
         id = 'default_id',
@@ -91,15 +88,5 @@ function createProp({ type = {}, values = {}, physics = {}, sensor = {}, texPath
     return prop
 }
 
-function skybox() {
-    const hdrLoader = new HDRLoader()
-    setTimeout(() => {
-        hdrLoader.load('/skybox/citrus_orchard_road_puresky_4k.hdr', (texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping
-            scene.background = texture
-            scene.environment = texture
-        })
-    }, 100)
-}
 
-export { createProp, skybox }
+export default createEntity

@@ -1,4 +1,3 @@
-//prop_helper.js
 import * as THREE from 'three'
 import { props } from '../main'
 import { Body, Box, Vec3 } from 'cannon-es'
@@ -6,7 +5,7 @@ import { Body, Box, Vec3 } from 'cannon-es'
 //~ Geometry Creators
 function createBoxGeo() {
     const geometry = new THREE.BoxGeometry(1, 1, 1)
-    const material = new THREE.MeshNormalMaterial({ wireframe: true})
+    const material = new THREE.MeshNormalMaterial({ wireframe: true })
 
     return new THREE.Mesh(geometry, material)
 }
@@ -70,10 +69,15 @@ function updateObjPhysics(id, { mass, linearDamping, friction, bounce } = {}) {
 
 function despawnObj(id) {
     const obj = getObjById(id)
+    if (!obj) return
 
-    obj.body?.world?.removeBody(obj.body)
+    if (obj.body?.world) {
+        setTimeout(() => {
+            obj.body.world?.removeBody(obj.body)
+        }, 0)
+    }
+
     obj.mesh?.parent?.remove(obj.mesh)
-
     props.splice(props.indexOf(obj), 1)
 }
 

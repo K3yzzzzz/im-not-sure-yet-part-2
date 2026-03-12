@@ -30,7 +30,7 @@ function getPlayerBody() {
     return playerBody
 }
 
-function player({ pos = [0, 2, 0], height = 1.8, radius = 0.4, mass = 70 } = {}) {
+function player({ pos = [0, 3, 0], height = 1.8, radius = 0.4, mass = 70 } = {}) {
     playerBody = _makeCapsule(radius, height, mass)
     playerBody.position.set(...pos)
     playerBody.userData = { type: 'player', id: 'player' }
@@ -119,4 +119,5 @@ function _updateFreecam() {
     camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))
 }
 
-export { player, updatePlayer, applyExternalVelocity, getPlayerBody }
+export default player 
+export { updatePlayer, applyExternalVelocity, getPlayerBody }
