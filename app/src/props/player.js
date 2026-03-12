@@ -9,6 +9,7 @@ let playerBody = null
 let yaw = 0
 let pitch = 0
 const PITCH_LIMIT = Math.PI / 2 - 0.05
+const externalVelocity = new THREE.Vector3()
 
 function _makeCapsule(radius, height, mass) {
     const body = new CANNON.Body({ mass, linearDamping: 0.9, angularDamping: 1.0, fixedRotation: true })
@@ -21,10 +22,18 @@ function _makeCapsule(radius, height, mass) {
     return body
 }
 
+function applyExternalVelocity(x, y, z) {
+    externalVelocity.set(x, y, z)
+}
+
+function getPlayerBody() {
+    return playerBody
+}
+
 function player({ pos = [0, 2, 0], height = 1.8, radius = 0.4, mass = 70 } = {}) {
     playerBody = _makeCapsule(radius, height, mass)
     playerBody.position.set(...pos)
-    playerBody.userData = { type: 'player' }
+    playerBody.userData = { type: 'player', id: 'player' }
     world.addBody(playerBody)
 
     camera.position.set(pos[0], pos[1] + height / 2, pos[2])
@@ -68,9 +77,18 @@ function _updateFPS() {
 
     if (move.lengthSq() > 0) {
         move.normalize()
-        playerBody.velocity.x = move.x * 8
-        playerBody.velocity.z = move.z * 8
+        playerBody.velocity.x = move.x * 8 + externalVelocity.x
+        playerBody.velocity.z = move.z * 8 + externalVelocity.z
+    } else {
+        playerBody.velocity.x = externalVelocity.x
+        playerBody.velocity.z = externalVelocity.z
     }
+
+    if (externalVelocity.y !== 0) {
+        playerBody.velocity.y += externalVelocity.y
+    }
+
+    externalVelocity.multiplyScalar(0.85)
 
     if (keys['Space'] && Math.abs(playerBody.velocity.y) < 0.5) {
         playerBody.velocity.y = 7
@@ -101,4 +119,4 @@ function _updateFreecam() {
     camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))
 }
 
-export { player, updatePlayer }
+export { player, updatePlayer, applyExternalVelocity, getPlayerBody }

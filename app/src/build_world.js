@@ -1,53 +1,40 @@
-import { createProp, createSensor, skybox } from './props/props'
-import { props } from './main'
-import { player } from './props/player'
-import { despawnObj } from './props/prop_helper'
+import { createProp, skybox } from './props/props'
+import { player, applyExternalVelocity, getPlayerBody } from './props/player'
+import { updateObjMaterial, despawnObj } from './props/prop_helper'
 import { dark, red, orange } from './data/textures'
 
 function buildWorld() {
     //? Room
-    createProp({ id: 'ground', type: 'box', pos: [0, -0.3, 0], scale: [30, 0.1, 30], mass: 0, texturePath: dark.o2 })
+    createProp({ type: { id: 'ground' }, values: { pos: [0, -0.3, 0], scale: [30, 0.1, 30] }, physics: { mass: 0 }, texPath: dark.o2 })
 
-    //? conveyor
-    createProp({ id: 'conveyor_base', type: 'box', pos: [0, -0.2, -3], scale: [7, 0.2, 1.5], mass: 0, texturePath: orange.o1 })
-    createProp({ id: 'conveyor_wall_1', type: 'box', pos: [0, 0, -3.8], scale: [7, 0.5, 0.1], mass: 0, texturePath: orange.o1 })
-    createProp({ id: 'conveyor_wall_2', type: 'box', pos: [0, 0, -2.2], scale: [7, 0.5, 0.1], mass: 0, texturePath: orange.o1 })
-    createProp({ id: 'conveyor_wall_3', type: 'box', pos: [-3.5, 0, -3], scale: [0.1, 0.5, 1.7], mass: 0, texturePath: orange.o1 })
-    createSensor({ id: 'conveyor_belt', pos: [0, 0, -3], scale: [7, 0.2, 1.5], filter: (id) => id.startsWith('mail:'), onObjStay: (body) => { body.velocity.x = 10 } })
+    //? Conveyor
+    createProp({ type: { id: 'conveyor_base' }, values: { pos: [0, -0.2, -3], scale: [7, 0.2, 1.5] }, physics: { bounce: 0, friction: 0.1 }, texPath: orange.o2 })
+    createProp({ type: { id: 'conveyor_wall_1' }, values: { pos: [0, 0, -3.8], scale: [7, 0.5, 0.1] }, texPath: orange.o2 })
+    createProp({ type: { id: 'conveyor_wall_2' }, values: { pos: [0, 0, -2.2], scale: [7, 0.5, 0.1] }, texPath: orange.o2 })
+    createProp({ type: { id: 'conveyor_wall_3' }, values: { pos: [-3.5, 0, -3], scale: [0.1, 0.5, 1.7] }, texPath: orange.o2 })
+    createProp({ type: { id: 'conveyor_belt' }, values: { pos: [0, 0, -3], scale: [7, 0.2, 1.5] }, sensor: { isSensor: true, collider: false, filter: (id) => id?.startsWith('mail:') || id === 'player', onObjStay: (body) => { if (body === getPlayerBody()) { applyExternalVelocity(10, -0.5, 0) } else { body.velocity.x = 10; body.velocity.y = -0.5 }}}})
     createDropper({ pos: [-2.5, 2, -3] })
 
     //? Kill zone
-    createSensor({ id: 'kaboom_back_to_spawn', pos: [0, -3, 0], scale: [200, 0.1, 200], filter: ['player'], onObjEnter: (body) => { body.position.set(0, 2, 0); body.velocity.set(0, 0, 0) } })
+    createProp({ type: { id: 'kaboom_back_to_spawn' }, values: { pos: [0, -3, 0], scale: [200, 0.1, 200] }, sensor: { isSensor: true, filter: ['player'], onObjEnter: (body) => { body.position.set(0, 2, 0); body.velocity.set(0, 0, 0) } } })
 
-    //? world
+    //? World
     skybox()
     player()
 }
 
 function createDropper({ dropperId = 'dropper_1', pos = [0, 2, 0] } = {}) {
     //~ Create the debug indicator
-    createProp({ id: dropperId, type: 'box', pos: [...pos], scale: [0.2, 0.2, 0.2], mass: 0, texturePath: red.o1 })
+    createProp({ type: { id: dropperId }, values: { pos: [...pos], scale: [0.2, 0.2, 0.2] }, texPath: red.o1 })
 
     //? Get our prop then change transparency
-    const index = props.findIndex(p => p.id === dropperId)
-    const { mesh } = props[index]
-    mesh.material.transparent = true
-    mesh.material.opacity = 0.3
+    updateObjMaterial(dropperId, { transparent: true, opacity: 0.3 })
 
     //~ Create our mail object
     class Mail {
         constructor(dropperId, count, pos) {
             this.id = `mail:${dropperId}:${count}`
-            this.props = createProp({
-                id: this.id,
-                type: 'box',
-                pos: [...pos],
-                scale: [0.4, 0.05, 0.2],
-                texturePath: red.o1,
-                restitution: 0.0,
-                friction: 0.0,
-                linearDamping: 0.9
-            });
+            this.props = createProp({ type: { id: this.id }, values: { pos: [...pos], scale: [0.4, 0.05, 0.2] }, physics: { mass: 1, bounce: 0, friction: 0.8, angularDamping: 1 }, texPath: red.o1 })
         }
     }
 
@@ -57,13 +44,10 @@ function createDropper({ dropperId = 'dropper_1', pos = [0, 2, 0] } = {}) {
         mailCount++
         const mail = new Mail(dropperId, mailCount, spawnPos)
 
-        //? Despawn object
-        setTimeout(() => {
-            despawnObj(mail.id)
-        }, 10000)
+        setTimeout(() => despawnObj(mail.id), 10000)
     }
 
-    var rate = 1 // rate = 0.2 -> 5000ms orrr rate = 1 -> 1/s
+    var rate = 1
     var interval = 1000 / rate
     var then = performance.now()
 
@@ -78,7 +62,7 @@ function createDropper({ dropperId = 'dropper_1', pos = [0, 2, 0] } = {}) {
         requestAnimationFrame(animate)
     }
 
-    animate(performance.now());
+    animate(performance.now())
 }
 
 export default buildWorld

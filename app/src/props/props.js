@@ -1,106 +1,94 @@
 //props.js
 import * as THREE from 'three'
+import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './prop_helper'
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js'
-import { createBoxGeo, createPlaneGeo, dynamicPhysicsObj, staticPhysicsObj, loadTexture } from './prop_helper'
 import { scene, world, props } from '../main'
 
-function createProp({ id,
-    type = 'box',
-    pos = [0, 0, 0],
-    rot = [0, 0, 0],
-    scale = [1, 1, 1],
-    texturePath = null,
-    mass = 1,
-    collider = true,
-    friction = 0.3,
-    restitution = 0.3, //bouncy
-    linearDamping = 0.01
-} = {}) {
-    const mesh = type === 'box' ? createBoxGeo() : createPlaneGeo()
-    mesh.position.set(...pos)
-    mesh.rotation.set(...rot)
-    mesh.scale.set(...scale)
+function createProp({ type = {}, values = {}, physics = {}, sensor = {}, texPath } = {}) {
+    //~ Set properties
+    const {
+        id = 'default_id',
+        //shape = 'box'      change when more props
+    } = type
 
-    // fix textures
-    if (texturePath) {
-        const texture = loadTexture(texturePath)
-        texture.colorSpace = THREE.SRGBColorSpace
+    const {
+        pos = [0, 0, 0],
+        rot = [0, 0, 0],
+        scale = [1, 1, 1]
+    } = values
 
-        mesh.material = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide })
-    }
+    const {
+        mass = 0,
+        collider = true,
+        friction = 0.3,
+        bounce = 0.3,
+        linearDamping = 0.01,
+        angularDamping = 0.01
+    } = physics
 
-    const body = mass === 0
-        ? staticPhysicsObj({ mesh: mesh, collider: collider, friction: friction, restitution: restitution })
-        : dynamicPhysicsObj({ mesh: mesh, mass: mass, collider: collider, friction: friction, restitution: restitution, linearDamping: linearDamping })
-    body.userData = { type: id }
+    const {
+        isSensor = false,
+        filter = [],
+        onObjEnter,
+        onObjStay,
+        onObjExit
+    } = sensor
 
-    console.log(`${type}----> pos: ${mesh.position.toArray()}, rot: ${mesh.rotation.toArray()}, scale: ${mesh.scale.toArray()}, mass: ${mass}, collider: ${collider}, friction: ${friction}, restitution: ${restitution}`)
-
-    scene.add(mesh)
-    world.addBody(body)
-
-    const prop = { id, mesh, body }
-    props.push(prop)
-
-    return prop
-}
-
-function createSensor({
-    id,
-    pos = [0, 0, 0],
-    rot = [0, 0, 0],
-    scale = [1, 1, 1],
-    collider = false,
-    filter = [],
-    onObjEnter,
-    onObjStay,
-    onObjExit
-} = {}) {
+    //~ Build
     const mesh = createBoxGeo()
     mesh.position.set(...pos)
     mesh.rotation.set(...rot)
     mesh.scale.set(...scale)
-    mesh.visible = true
 
-    const body = staticPhysicsObj({ mesh, collider })
+    if (texPath) mesh.material = createTexMaterial(texPath)
 
-    const activeBodies = new Set()
+    const body = mass === 0
+        ? staticPhysicsObj({ mesh, collider, friction, restitution: bounce })
+        : dynamicPhysicsObj({ mesh, mass, collider, friction, restitution: bounce, linearDamping, angularDamping })
 
-    const filterFn = typeof filter === 'function'
-        ? filter
-        : filter.length
-            ? (type) => filter.includes(type)
-            : () => true
+    body.userData = { type: id }
 
-    body.addEventListener('collide', (e) => {
-        const hitBody = e.body
-        if (!activeBodies.has(hitBody) && filterFn(hitBody.userData?.type)) {
-            activeBodies.add(hitBody)
-            onObjEnter?.(hitBody)
-        }
-    })
+    //~ Sensor logic
+    if (isSensor) {
+        body.isTrigger = true
+        const activeBodies = new Set()
+        const filterFn = typeof filter === 'function'
+            ? filter
+            : filter.length
+                ? (type) => filter.includes(type)
+                : () => true
 
-    world.addEventListener('postStep', () => {
-        for (const hitBody of activeBodies) {
-            const stillColliding = world.contacts.some(c =>
-                (c.bi === body && c.bj === hitBody) ||
-                (c.bj === body && c.bi === hitBody)
-            )
-            if (stillColliding) {
-                onObjStay?.(hitBody)
-            } else {
-                activeBodies.delete(hitBody)
-                onObjExit?.(hitBody)
+        body.addEventListener('collide', (e) => {
+            const hitBody = e.body
+            if (!activeBodies.has(hitBody) && filterFn(hitBody.userData?.type)) {
+                activeBodies.add(hitBody)
+                onObjEnter?.(hitBody)
             }
-        }
-    })
+        })
 
+        world.addEventListener('postStep', () => {
+            for (const hitBody of activeBodies) {
+                const stillColliding = world.contacts.some(c =>
+                    (c.bi === body && c.bj === hitBody) ||
+                    (c.bj === body && c.bi === hitBody)
+                )
+                if (stillColliding) {
+                    onObjStay?.(hitBody)
+                } else {
+                    activeBodies.delete(hitBody)
+                    onObjExit?.(hitBody)
+                }
+            }
+        })
+    }
+
+    //~ Push
     scene.add(mesh)
     world.addBody(body)
 
-    const sensor = { id, mesh, body, type: 'sensor' }
-    props.push(sensor)
-    return sensor
+    const prop = { id, mesh, body, ...(isSensor && { type: 'sensor' }) }
+    props.push(prop)
+    return prop
 }
 
 function skybox() {
@@ -114,4 +102,4 @@ function skybox() {
     }, 100)
 }
 
-export { createProp, createSensor, skybox }
+export { createProp, skybox }
