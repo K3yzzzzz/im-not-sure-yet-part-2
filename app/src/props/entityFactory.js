@@ -1,18 +1,9 @@
-import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './entityUtils'
+import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial, loadModel } from './entityUtils'
 import { scene, world, props } from '../main'
 
-function createEntity({ type = {}, values = {}, physics = {}, sensor = {}, texPath } = {}) {
+function createEntity({ id, tex, values = {}, physics = {}, sensor = {} } = {}) {
     //~ Set properties
-    const {
-        id = 'default_id',
-        //shape = 'box'      change when more props
-    } = type
-
-    const {
-        pos = [0, 0, 0],
-        rot = [0, 0, 0],
-        scale = [1, 1, 1]
-    } = values
+    const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = values
 
     const {
         mass = 0,
@@ -37,7 +28,7 @@ function createEntity({ type = {}, values = {}, physics = {}, sensor = {}, texPa
     mesh.rotation.set(...rot)
     mesh.scale.set(...scale)
 
-    if (texPath) mesh.material = createTexMaterial(texPath)
+    if (tex) mesh.material = createTexMaterial(tex)
 
     const body = mass === 0
         ? staticPhysicsObj({ mesh, collider, friction, restitution: bounce })
@@ -88,5 +79,22 @@ function createEntity({ type = {}, values = {}, physics = {}, sensor = {}, texPa
     return prop
 }
 
+async function createModel({ values = {}, paths = {} } = {}) {
+    const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = values
+    const { tex = '', model = '' } = paths
 
+    const { mesh, body } = await loadModel(model, scale)
+    if (tex) mesh.traverse(c => { if (c.isMesh) c.material = createTexMaterial(tex) })
+    mesh.position.set(...pos)
+    mesh.rotation.set(...rot)
+    mesh.scale.set(...scale)
+    body.position.set(...pos)
+    body.quaternion.setFromEuler(...rot)
+
+    scene.add(mesh)
+    world.addBody(body)
+    return { mesh, body }
+}
+
+export { createModel }
 export default createEntity

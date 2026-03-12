@@ -30,8 +30,8 @@ scene.add(light)
 scene.add(new THREE.AmbientLight(0xffffff, 1))
 
 //? Debug
-//import CannonDebugger from 'cannon-es-debugger'
-// const cannonDebugger = new CannonDebugger(scene, world, { color: 0xff0000, scale: 1.02 })
+import CannonDebugger from 'cannon-es-debugger'
+const cannonDebugger = new CannonDebugger(scene, world, { color: 0xff0000, scale: 1.02 })
 
 import Stats from 'stats.js'
 var stats = new Stats()
@@ -46,10 +46,11 @@ buildWorld()
 function animate() {
     stats.begin()
 
-    world.step(1 / 60)
     updatePlayer()
+    //cannonDebugger.update()
     for (const { mesh, body } of props) { if (!body) continue; mesh.position.copy(body.position); mesh.quaternion.copy(body.quaternion) }
 
+    world.step(1 / 60)
     renderer.render(scene, camera)
 
     stats.end();
