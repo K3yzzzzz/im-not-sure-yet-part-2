@@ -1,26 +1,13 @@
-import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial, loadModel } from './entityUtils'
+//entityFactory.js
+import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './entityUtils'
 import { scene, world, props } from '../main'
 
-function createEntity({ id, tex, values = {}, physics = {}, sensor = {} } = {}) {
+function createEntity({ key = {}, values = {}, physics = {}, sensor = {}, tex } = {}) {
     //~ Set properties
+    const { id = '', tags = [] } = key
     const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = values
-
-    const {
-        mass = 0,
-        collider = true,
-        friction = 0.3,
-        bounce = 0.3,
-        linearDamping = 0.01,
-        angularDamping = 0.01
-    } = physics
-
-    const {
-        isSensor = false,
-        filter = [],
-        onObjEnter,
-        onObjStay,
-        onObjExit
-    } = sensor
+    const { collider = true, mass = 0, friction = 0.3, restitution = 0.3, damping = [] } = physics
+    const { filter = [], onObjEnter, onObjStay, onObjExit } = sensor
 
     //~ Build
     const mesh = createBoxGeo()
@@ -31,13 +18,11 @@ function createEntity({ id, tex, values = {}, physics = {}, sensor = {} } = {}) 
     if (tex) mesh.material = createTexMaterial(tex)
 
     const body = mass === 0
-        ? staticPhysicsObj({ mesh, collider, friction, restitution: bounce })
-        : dynamicPhysicsObj({ mesh, mass, collider, friction, restitution: bounce, linearDamping, angularDamping })
-
-    body.userData = { type: id }
+        ? staticPhysicsObj({ mesh, collider, friction, restitution })
+        : dynamicPhysicsObj({ mesh, mass, collider, friction, restitution, damping })
 
     //~ Sensor logic
-    if (isSensor) {
+    if (sensor.length > 0) {
         body.isTrigger = true
         const activeBodies = new Set()
         const filterFn = typeof filter === 'function'
@@ -71,30 +56,14 @@ function createEntity({ id, tex, values = {}, physics = {}, sensor = {} } = {}) 
     }
 
     //~ Push
+    body.userData = { type: key }
+
     scene.add(mesh)
     world.addBody(body)
 
-    const prop = { id, mesh, body, ...(isSensor && { type: 'sensor' }) }
+    const prop = { key, mesh, body }
     props.push(prop)
     return prop
 }
 
-async function createModel({ values = {}, paths = {} } = {}) {
-    const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = values
-    const { tex = '', model = '' } = paths
-
-    const { mesh, body } = await loadModel(model, scale)
-    if (tex) mesh.traverse(c => { if (c.isMesh) c.material = createTexMaterial(tex) })
-    mesh.position.set(...pos)
-    mesh.rotation.set(...rot)
-    mesh.scale.set(...scale)
-    body.position.set(...pos)
-    body.quaternion.setFromEuler(...rot)
-
-    scene.add(mesh)
-    world.addBody(body)
-    return { mesh, body }
-}
-
-export { createModel }
 export default createEntity

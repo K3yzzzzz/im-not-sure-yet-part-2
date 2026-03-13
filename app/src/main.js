@@ -53,5 +53,5 @@ function animate() {
     world.step(1 / 60)
     renderer.render(scene, camera)
 
-    stats.end();
+    stats.end()
 }
