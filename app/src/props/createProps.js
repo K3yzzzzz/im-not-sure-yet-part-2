@@ -1,6 +1,6 @@
 //createProps.js
 import createEntity from '../props/entityFactory'
-import { updateObjMaterial, despawnObj, getActiveMail, updateObjPhysics } from './entityUtils'
+import { despawnObj, getActiveMail, updateObjProps } from './entityUtils'
 import { applyExternalVelocity, getPlayerBody } from '../props/player'
 import { dark, red, orange, purple } from '../data/textures'
 
@@ -8,22 +8,16 @@ import { dark, red, orange, purple } from '../data/textures'
 //~ Re-usable
 function createDropper({ dropperId = 'dropper_1', pos = [0, 0, 0], speed = 1 } = {}) {
     //~ Create the debug indicator
-    createEntity({ id: dropperId, tex: red.o1, values: { pos: [...pos], scale: [0.2, 0.2, 0.2] } })
+    createEntity({ key: { id: dropperId }, transform: { pos: [...pos], scale: [0.2, 0.2, 0.2] }, tex: red.o1, })
 
     //? Get our prop then change transparency
-    updateObjMaterial(dropperId, { transparent: true, opacity: 0.3 })
+    updateObjProps(dropperId, { transparent: true, opacity: 0.3 })
 
     //~ Create our mail object
     class Mail {
         constructor(dropperId, count, pos) {
             this.id = `mail:${count}`
-            this.props = createEntity({
-                id: this.id,
-                tex: red.o2, 
-                values: { pos: [...pos], scale: [0.2, 0.05, 0.4] }, 
-                tags: { owner: dropperId }, 
-                physics: { mass: 1, bounce: 0, friction: 0.8 }
-            })
+            this.props = createEntity({ key: { id: this.id, tags: [`owner:${dropperId}`] }, transform: { pos: [...pos], scale: [0.2, 0.05, 0.4] }, physics: { mass: 1, restitution: 0, friction: 0.8 }, tex: red.o2 })
         }
     }
 
@@ -33,7 +27,7 @@ function createDropper({ dropperId = 'dropper_1', pos = [0, 0, 0], speed = 1 } =
         mailCount++
         const mail = new Mail(dropperId, mailCount, spawnPos)
 
-        //setTimeout(() => despawnObj(mail.id), 10000)
+        setTimeout(() => despawnObj(mail.id), 60000)
     }
 
     var interval = 1000 / speed
@@ -53,19 +47,19 @@ function createDropper({ dropperId = 'dropper_1', pos = [0, 0, 0], speed = 1 } =
     animate(performance.now())
 }
 
-function createConveyor({ conveyorId = 'conveyor_1', pos = [0, 0, 0], length = 7, launch = false, walls = false }) {
+function createConveyor({ conveyorId = 'conveyor_1', pos = [0, 0, 0], values = {} }) {
     //~ Variables
     const [x, y, z] = pos
+    const { length, launch, walls } = values
 
     //~ Build
     //? Create main conveyor
-    createEntity({ id: `${conveyorId}_base`, tex: orange.o2, values: { pos: [x, y + 0.05, z], scale: [1.5, 0.1, length] }, physics: { bounce: 0, friction: 0.1 } })
+    createEntity({ key: { id: `${conveyorId}_base` }, transform: { pos: [x, y + 0.05, z], scale: [1.5, 0.1, length] }, physics: { restitution: 0, friction: 0.1 }, tex: orange.o2, })
     createEntity({
-        id: `${conveyorId}_belt`,
-        values: { pos: [x, y + 0.2, z], scale: [1.5, 0.2, length] },
+        key: { id: `${conveyorId}_belt` },
+        transform: { pos: [x, y + 0.2, z], scale: [1.5, 0.2, length] },
+        physics: { collider: false },
         sensor: {
-            isSensor: true,
-            collider: false,
             filter: (id) => id?.startsWith('mail:') || id === 'player',
             onObjStay: (body) => {
                 if (body === getPlayerBody()) {
@@ -94,8 +88,8 @@ function createConveyor({ conveyorId = 'conveyor_1', pos = [0, 0, 0], length = 7
 
     //? Create walls (if enabled)
     if (walls) {
-        createEntity({ id: `${conveyorId}_wall_l`, tex: orange.o2, values: { pos: [x - 0.8, y + 0.25, z], scale: [0.1, 0.5, length] } })
-        createEntity({ id: `${conveyorId}_wall_r`, tex: orange.o2, values: { pos: [x + 0.8, y + 0.25, z], scale: [0.1, 0.5, length] } })
+        createEntity({ key: { id: `${conveyorId}_wall_l` }, transform: { pos: [x - 0.8, y + 0.25, z], scale: [0.1, 0.5, length] }, tex: orange.o2 })
+        createEntity({ key: { id: `${conveyorId}_wall_r` }, transform: { pos: [x + 0.8, y + 0.25, z], scale: [0.1, 0.5, length] }, tex: orange.o2 })
     }
 }
 
@@ -103,45 +97,40 @@ function createConveyor({ conveyorId = 'conveyor_1', pos = [0, 0, 0], length = 7
 //convert to a 3d model later
 function boxTruck() {
     //~ Make box (temp)
-    createEntity({ id: 'box_truck_top', tex: purple.o2, values: { pos: [10, 4.5, 15], scale: [3.2, 0.2, 3] } })
-    createEntity({ id: 'box_truck_L', tex: purple.o2, values: { pos: [11.5, 3, 15], scale: [0.2, 3, 3] } })
-    createEntity({ id: 'box_truck_back', tex: purple.o2, values: { pos: [10, 3, 16.2], scale: [3, 3, 0.6] } })
-    createEntity({ id: 'box_truck_R', tex: purple.o2, values: { pos: [8.5, 3, 15], scale: [0.2, 3, 3] } })
-    createEntity({ id: 'box_truck_bottom', tex: purple.o2, values: { pos: [10, 1.5, 15], scale: [3.2, 0.2, 3] } })
+    createEntity({ key: { id: 'box_truck_top' }, transform: { pos: [10, 4.5, 15], scale: [3.2, 0.2, 3] }, tex: purple.o2 })
+    createEntity({ key: { id: 'box_truck_L' }, transform: { pos: [11.5, 3, 15], scale: [0.2, 3, 3] }, tex: purple.o2 })
+    createEntity({ key: { id: 'box_truck_back' }, transform: { pos: [10, 3, 16.2], scale: [3, 3, 0.6] }, tex: purple.o2 })
+    createEntity({ key: { id: 'box_truck_R' }, transform: { pos: [8.5, 3, 15], scale: [0.2, 3, 3] }, tex: purple.o2 })
+    createEntity({ key: { id: 'box_truck_bottom' }, transform: { pos: [10, 1.5, 15], scale: [3.2, 0.2, 3] }, tex: purple.o2 })
 
     //? Door
     let mailInTruck = 0
-    const maxMail = 10
+    const maxMail = 5
 
     createEntity({
-        id: 'box_truck_oneway',
-        values: { pos: [10, 3, 13.5], scale: [3, 3, 0.1] },
+        key: { id: 'box_truck_oneway' },
+        transform: { pos: [10, 3, 13.45], scale: [3, 3, 0.1] },
         physics: { collider: true },
         sensor: {
-            isSensor: true,
             filter: (id) => id?.startsWith('mail:'),
-            onObjEnter: () => {
+            onObjEnter: ({ userData }) => {
                 mailInTruck++
+                console.log(mailInTruck)
+
+                const updatedTags = [...new Set([...userData.tags, 'inTruck'])]
+                if (!userData.tags.includes('rejecting')) {
+                    updateObjProps(userData.id, { tags: updatedTags })
+                }
 
                 if (mailInTruck >= maxMail) {
                     setTimeout(() => {
-                        getActiveMail().forEach(p => despawnObj(p.id))
+                        getActiveMail()
+                            .filter(p => p.tags.includes('inTruck'))
+                            .forEach(p => despawnObj(p.id))
                         mailInTruck = 0
-                    }, 2000)
+                    }, 5000)
                 }
             },
-            onObjStay: (body) => {
-                if (mailInTruck <= maxMail) {
-                    if (body.velocity.z < 0) {
-                        body.velocity.z = 0
-                    }
-                    if (body.position.z < 13.5) {
-                        body.position.z = 13.51
-                    }
-                } else {
-                    body.velocity.z = 0
-                }
-            }
         }
     })
 }

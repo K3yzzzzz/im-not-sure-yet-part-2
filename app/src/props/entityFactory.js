@@ -1,11 +1,12 @@
 //entityFactory.js
-import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj, createTexMaterial } from './entityUtils'
+import * as THREE from 'three'
+import { createBoxGeo, dynamicPhysicsObj, staticPhysicsObj } from './entityUtils'
 import { scene, world, props } from '../main'
 
-function createEntity({ key = {}, values = {}, physics = {}, sensor = {}, tex } = {}) {
+function createEntity({ key = {}, transform = {}, physics = {}, sensor = {}, tex } = {}) {
     //~ Set properties
     const { id = '', tags = [] } = key
-    const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = values
+    const { pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = transform
     const { collider = true, mass = 0, friction = 0.3, restitution = 0.3, damping = [] } = physics
     const { filter = [], onObjEnter, onObjStay, onObjExit } = sensor
 
@@ -15,14 +16,17 @@ function createEntity({ key = {}, values = {}, physics = {}, sensor = {}, tex } 
     mesh.rotation.set(...rot)
     mesh.scale.set(...scale)
 
-    if (tex) mesh.material = createTexMaterial(tex)
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load(tex)
+    texture.colorSpace = THREE.SRGBColorSpace
+    if (tex) mesh.material = new THREE.MeshStandardMaterial({ map: texture })
 
     const body = mass === 0
         ? staticPhysicsObj({ mesh, collider, friction, restitution })
         : dynamicPhysicsObj({ mesh, mass, collider, friction, restitution, damping })
 
     //~ Sensor logic
-    if (sensor.length > 0) {
+    if (onObjEnter || onObjStay || onObjExit) {
         body.isTrigger = true
         const activeBodies = new Set()
         const filterFn = typeof filter === 'function'
@@ -56,12 +60,12 @@ function createEntity({ key = {}, values = {}, physics = {}, sensor = {}, tex } 
     }
 
     //~ Push
-    body.userData = { type: key }
+    body.userData = { id, tags, type: id }
 
     scene.add(mesh)
     world.addBody(body)
 
-    const prop = { key, mesh, body }
+    const prop = { id, tags, mesh, body }
     props.push(prop)
     return prop
 }

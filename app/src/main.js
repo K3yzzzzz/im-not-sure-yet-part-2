@@ -8,7 +8,7 @@ import { updatePlayer } from './props/player'
 //~ Scene
 export const scene = new THREE.Scene()
 export const world = new World()
-export const props = []
+export const props = [] //maybe scrap
 
 const width = window.innerWidth, height = window.innerHeight
 world.gravity.set(0, -9.82, 0)

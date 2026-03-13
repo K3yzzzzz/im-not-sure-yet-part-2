@@ -1,10 +1,6 @@
 //entityUtils.js
 import * as THREE from 'three'
-import { props } from '../main'
 import { Body, Box, Vec3 } from 'cannon-es'
-// import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-// import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 //~ Geometry Creators
 function createBoxGeo() {
@@ -39,68 +35,45 @@ function dynamicPhysicsObj({ mesh, collider, friction, restitution, damping, mas
 }
 
 //~ Helpers
-//? Texture & Models
-function createTexMaterial(path) {
-    const loader = new THREE.TextureLoader()
-    const texture = loader.load(path)
-    texture.colorSpace = THREE.SRGBColorSpace
-    return new THREE.MeshStandardMaterial({ map: texture })
-}
+function updateObjProps({ mesh, body }, { tags, pos, rot, scale, mass, linearDamping, friction, restitution, ...materials } = {}) {
+    //? Key
+    if (tags !== undefined) body.userData.tags = tags
 
-//? Obj modifying
-function getObjById(id) {
-    const obj = props.find(p => p.id === id)
-    if (!obj) console.warn(`getObjById: no prop found with id "${id}"`)
-    return obj
-}
+    //? Transform
+    if (pos) mesh.position.set(...pos)
+    if (rot) mesh.rotation.set(...rot)
+    if (scale) mesh.scale.set(...scale)
 
-function updateObjProps({key = {}, values = {}, physics = {}}) {
+    //? Physics
+    if (mass !== undefined) body.mass = mass
+    if (linearDamping !== undefined) body.linearDamping = linearDamping
+    if (friction !== undefined) body.material.friction = friction
+    if (restitution !== undefined) body.material.restitution = restitution
+    body.updateMassProperties()
 
-}
-
-function updateObjMaterial(id, newValues) {
-    const obj = getObjById(id)
-
-    Object.assign(obj.mesh.material, newValues)
-    obj.mesh.material.needsUpdate = true
-}
-
-function updateObjValues(id, { pos, rot, scale } = {}) {
-    const obj = getObjById(id)
-
-    if (pos) obj.mesh.position.set(...pos)
-    if (rot) obj.mesh.rotation.set(...rot)
-    if (scale) obj.mesh.scale.set(...scale)
-}
-
-function updateObjPhysics(id, { mass, linearDamping, friction, bounce } = {}) {
-    const obj = getObjById(id)
-
-    if (mass !== undefined) obj.body.mass = mass
-    if (linearDamping !== undefined) obj.body.linearDamping = linearDamping
-    if (friction !== undefined) obj.body.material.friction = friction
-    if (bounce !== undefined) obj.body.material.restitution = bounce
-
-    obj.body.updateMassProperties()
-}
-
-function despawnObj(id) {
-    const obj = getObjById(id)
-    if (!obj) return
-
-    if (obj.body?.world) {
-        setTimeout(() => {
-            obj.body.world?.removeBody(obj.body)
-        }, 0)
+    //? Material
+    if (Object.keys(materials).length) {
+        Object.assign(mesh.material, materials)
+        mesh.material.needsUpdate = true
     }
+}
 
-    obj.mesh?.parent?.remove(obj.mesh)
-    props.splice(props.indexOf(obj), 1)
+function despawnObj({ mesh, body }) {
+    body.userData.mesh?.parent?.remove(body.userData.mesh)
+    world.removeBody(body)
+    //old V
+    body?.world?.removeBody(body)
+    mesh?.parent?.remove(mesh)
 }
 
 //? Other
 function getActiveMail() {
-    return props.filter(p => p.id?.startsWith('mail:'))
+    return world.bodies.filter(b => b.userData?.id?.startsWith('mail:'))
 }
 
-export { createBoxGeo, staticPhysicsObj, dynamicPhysicsObj, createTexMaterial, updateObjMaterial, getActiveMail, updateObjValues, updateObjPhysics, despawnObj }
+export {
+    createBoxGeo,
+    staticPhysicsObj, dynamicPhysicsObj,
+    updateObjProps, despawnObj,
+    getActiveMail
+}
