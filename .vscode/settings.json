@@ -6,7 +6,8 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "**/*.crswap": true,
-        "app/*.*": true
+        "app/*.*": true,
+        "**/node_modules": true
     },
     "explorerExclude.backup": {}
 }

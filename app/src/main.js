@@ -1,14 +1,16 @@
 import * as THREE from 'three'
 import { World } from 'cannon-es'
 
+import CannonDebugger from 'cannon-es-debugger'
+import Stats from 'stats.js'
+
 import './styles/index.css'
-import buildWorld from './buildWorld.js'
-import { updatePlayer } from './props/player'
+import buildWorld from './world/buildWorld.js'
+import { updatePlayer } from './player/player.js'
 
 //~ Scene
 export const scene = new THREE.Scene()
 export const world = new World()
-export const props = [] //maybe scrap
 
 const width = window.innerWidth, height = window.innerHeight
 world.gravity.set(0, -9.82, 0)
@@ -30,14 +32,11 @@ scene.add(light)
 scene.add(new THREE.AmbientLight(0xffffff, 1))
 
 //? Debug
-import CannonDebugger from 'cannon-es-debugger'
 const cannonDebugger = new CannonDebugger(scene, world, { color: 0xff0000, scale: 1.02 })
 
-import Stats from 'stats.js'
 var stats = new Stats()
 stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom)
-
 
 //? build
 buildWorld()
@@ -46,11 +45,18 @@ buildWorld()
 function animate() {
     stats.begin()
 
-    updatePlayer()
     //cannonDebugger.update()
-    for (const { mesh, body } of props) { if (!body) continue; mesh.position.copy(body.position); mesh.quaternion.copy(body.quaternion) }
 
+    updatePlayer()
     world.step(1 / 60)
+
+    world.bodies.forEach(body => {
+        if (!body.userData?.mesh) return
+
+        const mesh = body.userData.mesh
+        mesh.position.copy(body.position)
+        mesh.quaternion.copy(body.quaternion)
+    })
     renderer.render(scene, camera)
 
     stats.end()
