@@ -1,13 +1,11 @@
 // dropper.js
 import createEntity from '../core/entityFactory'
 import { despawnObj, updateObjProps } from '../core/entityUtils'
-import { red } from '../data/textures'
 
 function createDropper({ dropperId = 'dropper_1', pos = [0, 0, 0], speed = 1 } = {}) {
     const dropperBody = createEntity({
         key: { id: dropperId },
-        transform: { pos: [...pos], scale: [0.2, 0.2, 0.2] },
-        paths: { texPath: red.o2 }
+        transform: { pos: [...pos], scale: [0.2, 0.2, 0.2] }
     })
 
     updateObjProps(dropperBody, { transparent: true, opacity: 0.3 })
@@ -24,8 +22,7 @@ function createDropper({ dropperId = 'dropper_1', pos = [0, 0, 0], speed = 1 } =
         const body = createEntity({
             key: { id, tags: [`owner:${dropperId}`] },
             transform: { pos: [...pos], scale: [0.2, 0.05, 0.4] },
-            physics: { mass: 1, restitution: 0, friction: 0.8 },
-            paths: { texPath: red.o2 }
+            physics: { mass: 1, restitution: 0, friction: 0.8 }
         })
 
         setTimeout(() => despawnObj(body), 60000)

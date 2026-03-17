@@ -1,7 +1,6 @@
 // conveyor.js
 import createEntity from '../core/entityFactory'
-import { applyExternalVelocity, getPlayerBody } from '../player/player'
-import { orange } from '../data/textures'
+import { applyExternalVelocity, getPlayerBody } from '../world/player'
 
 function createConveyor({ conveyorId = 'conveyor_1', pos = [0, 0, 0], values = {} } = {}) {
     const [x, y, z] = pos
@@ -17,8 +16,7 @@ function createBase(conveyorId, x, y, z, length) {
     createEntity({
         key: { id: `${conveyorId}_base` },
         transform: { pos: [x, y + 0.05, z], scale: [1.5, 0.1, length] },
-        physics: { restitution: 0, friction: 0.1 },
-        paths: { texPath: orange.o2 }
+        physics: { restitution: 0, friction: 0.1 }
     })
 }
 
@@ -38,13 +36,11 @@ function createBelt(conveyorId, x, y, z, length, launch) {
 function createWalls(conveyorId, x, y, z, length) {
     createEntity({
         key: { id: `${conveyorId}_wall_l` },
-        transform: { pos: [x - 0.8, y + 0.25, z], scale: [0.1, 0.5, length] },
-        paths: { texPath: orange.o2 }
+        transform: { pos: [x - 0.8, y + 0.25, z], scale: [0.1, 0.5, length] }
     })
     createEntity({
         key: { id: `${conveyorId}_wall_r` },
-        transform: { pos: [x + 0.8, y + 0.25, z], scale: [0.1, 0.5, length] },
-        paths: { texPath: orange.o2 }
+        transform: { pos: [x + 0.8, y + 0.25, z], scale: [0.1, 0.5, length] }
     })
 }
 

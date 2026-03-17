@@ -5,7 +5,7 @@ import { scene } from '../main'
 
 function skybox() {
     return new Promise((resolve) => {
-        new HDRLoader().load('/skybox/...hdr', (texture) => {
+        new HDRLoader().load('/textures/skybox.hdr', (texture) => {
             texture.mapping = THREE.EquirectangularReflectionMapping
             scene.background = texture
             scene.environment = texture
